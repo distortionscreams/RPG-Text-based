@@ -5,14 +5,17 @@ using static RPG_Text_base.Program;
 using static RPG_Text_base.Stats;
 using static RPG_Text_base.Title;
 using static RPG_Text_base.Leaderboards;
+
 namespace RPG_Text_base;
 
 public static class Shop
 {
     // ======== SHOP PRICES ========
-    public const int BASE_POTION_COST = 150;
-    public const int BASE_SWORD_COST = 250;
-    public const int BASE_ARMOR_COST = 200;
+    public const int BASE_POTION_COST = 100;
+    public const int BASE_SWORD_COST = 200;
+    public const int BASE_ARMOR_COST = 150;
+    public const int BASE_RELIC_COST = 50;     // Thánh Tích
+
     // Số lần đã mua (cộng dồn, không reset)
     public static int purchaseCount = 0;
 
@@ -20,7 +23,7 @@ public static class Shop
     public static int POTION_COST => BASE_POTION_COST + purchaseCount * 50;
     public static int SWORD_COST => BASE_SWORD_COST + purchaseCount * 50;
     public static int ARMOR_COST => BASE_ARMOR_COST + purchaseCount * 50;
-
+    public static int RELIC_COST => BASE_RELIC_COST + purchaseCount * 50;   // Thánh Tích
 
     // ========== SHOP ==========
     public static void RunShop()
@@ -34,24 +37,58 @@ public static class Shop
             PrintColor(ConsoleColor.Yellow, "╚══════════════════════════════════════╝");
             PrintColor(ConsoleColor.DarkYellow, $"\n  💰 Your gold: {totalScore} pts");
             PrintColor(ConsoleColor.Magenta,
-                $"  🗡️  ATK Bonus: +{playerAtkBonus}  |  🛡️  Max HP: {playerMaxHP}");
+                $"  🗡️  ATK Bonus: +{playerAtkBonus}  |  🛡️  Max HP: {playerMaxHP}  |  ⚡ Stamina Regen: +{staminaRegen}");
+
             Console.WriteLine("\n  ┌─── Items Available ──────────────────┐");
             PrintShopItem("1", "🧪", "Health Potion", "Restore 20-35 HP in next battle", POTION_COST, totalScore >= POTION_COST);
             PrintShopItem("2", "⚔️ ", "Sword Upgrade", "Permanently +2 ATK per attack", SWORD_COST, totalScore >= SWORD_COST);
             PrintShopItem("3", "🛡️ ", "Armor Upgrade", "Permanently +10 Max HP", ARMOR_COST, totalScore >= ARMOR_COST);
+            PrintShopItem("4", "✨", "Holy Relic", "Increase Stamina Regen (+1 per upgrade)", RELIC_COST, totalScore >= RELIC_COST);
             Console.WriteLine("  │                                      │");
-            PrintColor(ConsoleColor.DarkGray, "  │  [4] Leave shop                      │");
+            PrintColor(ConsoleColor.DarkGray, "  │  [5] Leave shop                      │");
             Console.WriteLine("  └──────────────────────────────────────┘");
 
-            Console.Write("\n  Choose item [1/2/3/4]: ");
+            Console.Write("\n  Choose item [1/2/3/4/5]: ");
             switch (Console.ReadLine()?.Trim() ?? "")
             {
-                case "1": BuyItem(POTION_COST, () => { extraPotions++; PrintColor(ConsoleColor.Magenta, "  ✅ Bought Health Potion! +1 extra potion next battle."); }); break;
-                case "2": BuyItem(SWORD_COST, () => { playerAtkBonus += 2; PrintColor(ConsoleColor.Green, $"  ✅ Sword upgraded! ATK permanently +2. (Total: +{playerAtkBonus})"); }); break;
-                case "3": BuyItem(ARMOR_COST, () => { playerMaxHP += 10; PrintColor(ConsoleColor.Cyan, $"  ✅ Armor upgraded! Max HP +10. (New: {playerMaxHP})"); }); break;
-                case "4": inShop = false; break;
+                case "1":
+                    BuyItem(POTION_COST, () =>
+                    {
+                        extraPotions++;
+                        PrintColor(ConsoleColor.Magenta, "  ✅ Bought Health Potion! +1 extra potion next battle.");
+                    });
+                    break;
+
+                case "2":
+                    BuyItem(SWORD_COST, () =>
+                    {
+                        playerAtkBonus += 2;
+                        PrintColor(ConsoleColor.Green, $"  ✅ Sword upgraded! ATK permanently +2. (Total: +{playerAtkBonus})");
+                    });
+                    break;
+
+                case "3":
+                    BuyItem(ARMOR_COST, () =>
+                    {
+                        playerMaxHP += 10;
+                        PrintColor(ConsoleColor.Cyan, $"  ✅ Armor upgraded! Max HP +10. (New: {playerMaxHP})");
+                    });
+                    break;
+
+                case "4":
+                    BuyItem(RELIC_COST, () =>
+                    {
+                        staminaRegen += 1;
+                        PrintColor(ConsoleColor.Blue, $"  ✅ Holy Relic upgraded! Stamina Regen +1. (Now: +{staminaRegen} per Defend)");
+                    });
+                    break;
+
+                case "5":
+                    inShop = false;
+                    break;
+
                 default:
-                    PrintColor(ConsoleColor.DarkYellow, "\n  ⚠️  Invalid choice. Please enter 1-4.");
+                    PrintColor(ConsoleColor.DarkYellow, "\n  ⚠️  Invalid choice. Please enter 1-5.");
                     Console.WriteLine("  Press any key to continue...");
                     Console.ReadKey();
                     break;
@@ -107,6 +144,7 @@ public static class Shop
         var parts = new List<string>();
         if (playerMaxHP != 100) parts.Add($"Max HP={playerMaxHP}");
         if (playerAtkBonus != 0) parts.Add($"ATK Bonus=+{playerAtkBonus}");
+        if (staminaRegen != 10) parts.Add($"Stamina Regen=+{staminaRegen}");
         return string.Join(" | ", parts);
     }
 
@@ -138,6 +176,4 @@ public static class Shop
         Console.ResetColor();
         Console.WriteLine("  │");
     }
-
 }
-

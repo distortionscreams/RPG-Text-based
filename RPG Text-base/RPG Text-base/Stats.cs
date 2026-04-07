@@ -17,7 +17,13 @@ public static class Stats
     // ========== PERSISTENT UPGRADES ==========
     public static int playerAtkBonus = 0;
     public static int playerMaxHP = 100;
+    public static int playerStamina = 100;
+    public static int playerMaxStamina = 100;
+
     public static int extraPotions = 0;
+
+    // === THÊM MỚI: Stamina Regen ===
+    public static int staminaRegen = 10;   // Stamina hồi mỗi khi chọn Defend
 
     // ========== MONSTER DATA ==========
 
@@ -59,51 +65,56 @@ public static class Stats
 
     // ── ⭐ 1 STAR ──────────────────────────────────────────────
     public static readonly MonsterStats[] OneStarMonsters =
-   {
-    new("Zombie",   70,  9,  16, 2, 6,   60,  "🧟"),
-    new("Skeleton", 64,  11, 18, 1, 5,   70,  "💀"),
-    new("Slime",    58,  7,  13, 5, 10,  50,  "🤮"),
-    new("Wolf",     75,  12, 20, 2, 7,   75,  "🐺"),
-    new("Ghost",    52,  10, 17, 1, 4,   65,  "👻"),
-   };
+    {
+        new("Zombie",          70,  9,  16, 2, 6,   60,  "🧟"),
+        new("Skeleton",        64,  11, 18, 1, 5,   70,  "💀"),
+        new("Slime",           58,  7,  13, 5, 10,  50,  "🤮"),
+        new("Wolf",            75,  12, 20, 2, 7,   75,  "🐺"),
+        new("Ghost",           52,  10, 17, 1, 4,   65,  "👻"),
+        new("Sinner",          82,  13, 21, 3, 8,   68,  "😈"),
+    };
 
     // ── ⭐⭐ 2 STAR ─────────────────────────────────────────────
     public static readonly MonsterStats[] TwoStarMonsters =
-   {
-    new("Giant Bat",    93,  15, 23, 4, 8,   110, "🦇"),
-    new("Lizardman",    104, 16, 25, 6, 12,  130, "🦎"),
-    new("Nightmare",    98,  17, 27, 3, 7,   140, "🌑"),
-    new("Flesh",        110, 14, 22, 7, 13,  120, "✋"),
-    new("Cursed Skull", 87,  18, 28, 2, 6,   135, "☠️"),
-   };
+    {
+        new("Giant Bat",       93,  15, 23, 4, 8,   110, "🦇"),
+        new("Lizardman",       104, 16, 25, 6, 12,  130, "🦎"),
+        new("Nightmare",       98,  17, 27, 3, 7,   140, "🌑"),
+        new("Flesh",           110, 14, 22, 7, 13,  120, "✋"),
+        new("Cursed Skull",    87,  18, 28, 2, 6,   135, "☠️"),
+        new("Crusader",        118, 20, 29, 5, 11,  145, "🛡️"),
+    };
 
     // ── ⭐⭐⭐ 3 STAR ────────────────────────────────────────────
     public static readonly MonsterStats[] ThreeStarMonsters =
-   {
-    new("Skeleton Warrior", 133, 21, 31, 8,  15, 200, "⚔️"),
-    new("Werewolf",         144, 23, 35, 6,  13, 220, "🐺"),
-    new("Wyvern",           150, 25, 37, 7,  14, 240, "🐲"),
-    new("Man-Eater Ghoul",  138, 22, 32, 5,  11, 210, "💀"),
-    new("Phantom Duelist",  127, 24, 36, 4,  10, 230, "🗡️"),
-   };
+    {
+        new("Skeleton Warrior", 133, 21, 31, 8,  15, 200, "⚔️"),
+        new("Werewolf",         144, 23, 35, 6,  13, 220, "🐺"),
+        new("Wyvern",           150, 25, 37, 7,  14, 240, "🐲"),
+        new("Man-Eater Ghoul",  138, 22, 32, 5,  11, 210, "💀"),
+        new("Phantom Duelist",  127, 24, 36, 4,  10, 230, "🗡️"),
+        new("Holy Knight",      162, 27, 39, 9,  16, 235, "⚔️"),
+    };
 
     // ── ⭐⭐⭐⭐ 4 STAR ───────────────────────────────────────────
     public static readonly MonsterStats[] FourStarMonsters =
-   {
-    new("Vampire",         175, 29, 44, 9,  17, 350, "🧛"),
-    new("Demon",           185, 31, 46, 10, 18, 380, "😈"),
-    new("Headless Knight", 196, 28, 43, 14, 22, 370, "⚔️"),
-    new("Medusa",          168, 32, 48, 8,  16, 360, "🐍"),
-    new("Fallen Angel",    180, 35, 51, 7,  15, 400, "👼"),
-   };
+    {
+        new("Vampire",          175, 29, 44, 9,  17, 350, "🧛"),
+        new("Demon",            185, 31, 46, 10, 18, 380, "😈"),
+        new("Headless Knight",  196, 28, 43, 14, 22, 370, "⚔️"),
+        new("Medusa",           168, 32, 48, 8,  16, 360, "🐍"),
+        new("Fallen Angel",     180, 35, 51, 7,  15, 400, "👼"),
+        new("Devil Hunter",     225, 39, 57, 12, 21, 460, "🔥"),
+    };
 
     // ── ⭐⭐⭐⭐⭐ 5 STAR ──────────────────────────────────────────
     public static readonly MonsterStats[] FiveStarMonsters =
-   {
-    new("Dragon",          260, 40, 60, 16, 25, 600, "🐉"),
-    new("Leviathan",       295, 38, 58, 14, 23, 650, "🌊"),
-    new("Hydra",           280, 35, 55, 18, 28, 620, "🐍"),
-    new("Death",           235, 46, 67, 12, 21, 700, "💀"),
-    new("Seraph of Death", 248, 44, 63, 15, 24, 750, "👼"),
-   };
+    {
+        new("Dragon",           260, 40, 60, 16, 25, 600, "🐉"),
+        new("Leviathan",        295, 38, 58, 14, 23, 650, "🌊"),
+        new("Hydra",            280, 35, 55, 18, 28, 620, "🐍"),
+        new("Death",            235, 46, 67, 12, 21, 700, "💀"),
+        new("Seraph of Death",  248, 44, 63, 15, 24, 750, "👼"),
+        new("Seraphim",         315, 52, 74, 18, 27, 820, "🌟"),
+    };
 }
