@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Collections.Generic;
 
-using static RPG_Text_base.Program;
+using static RPG_Text_base.Program;   // Giữ để dễ gọi một số hàm nếu cần
 using static RPG_Text_base.Title;
+using static RPG_Text_base.Leaderboards;
+using static RPG_Text_base.Shop;
 
 namespace RPG_Text_base;
 
@@ -14,16 +16,17 @@ public static class Stats
     public static int monstersKilled = 0;
     public static int totalTurns = 0;
 
-    // ========== PERSISTENT UPGRADES ==========
-    public static int playerAtkBonus = 0;
+    // ========== PLAYER STATS ==========
+    public static int playerHP = 100;
     public static int playerMaxHP = 100;
     public static int playerStamina = 100;
     public static int playerMaxStamina = 100;
 
+    public static int playerAtkBonus = 0;
     public static int extraPotions = 0;
 
-    // === THÊM MỚI: Stamina Regen ===
-    public static int staminaRegen = 10;   // Stamina hồi mỗi khi chọn Defend
+    // Stamina regeneration when defending
+    public static int staminaRegen = 10;
 
     // ========== MONSTER DATA ==========
 
@@ -36,7 +39,14 @@ public static class Stats
         FiveStar = 5
     }
 
-    // Chỉ giữ các field mà battle thực sự dùng
+    // ── Drop item info ─────────────────────────────────────────
+    public record DropInfo(
+        string ItemId,
+        string ItemName,
+        string Emoji
+    );
+
+    // ── Monster stats record ──────────────────────
     public record MonsterStats(
         string Name,
         int MaxHP,
@@ -45,10 +55,11 @@ public static class Stats
         int DefMin,
         int DefMax,
         int Score,
-        string Emoji
+        string Emoji,
+        DropInfo Drop
     );
 
-    // Battle gọi GetMonsterStats(currentTier) — chọn ngẫu nhiên từ pool theo rarity
+    // ── Lấy monster ngẫu nhiên theo rarity ───────────────────
     public static MonsterStats GetMonsterStats(MonsterRarity rarity)
     {
         MonsterStats[] pool = rarity switch
@@ -60,61 +71,78 @@ public static class Stats
             MonsterRarity.FiveStar => FiveStarMonsters,
             _ => OneStarMonsters
         };
-        return pool[rand.Next(pool.Length)];
+
+        // SỬA LỖI RAND: Dùng Program.rand thay vì rand trực tiếp
+        return pool[Program.rand.Next(pool.Length)];
     }
 
-    // ── ⭐ 1 STAR ──────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    //  ⭐ 1 STAR
+    // ══════════════════════════════════════════════════════════
     public static readonly MonsterStats[] OneStarMonsters =
     {
-        new("Zombie",          70,  9,  16, 2, 6,   60,  "🧟"),
-        new("Skeleton",        64,  11, 18, 1, 5,   70,  "💀"),
-        new("Slime",           58,  7,  13, 5, 10,  50,  "🤮"),
-        new("Wolf",            75,  12, 20, 2, 7,   75,  "🐺"),
-        new("Ghost",           52,  10, 17, 1, 4,   65,  "👻"),
-        new("Sinner",          82,  13, 21, 3, 8,   68,  "😈"),
+        new("Zombie",    78, 10, 18, 3,  7,  78,  "🧟", new("rotten_flesh",    "Rotten Flesh",    "🥩")),
+        new("Skeleton",  72, 12, 20, 2,  6,  88,  "💀", new("bone_shard",      "Bone Shard",      "🦴")),
+        new("Slime",     65,  8, 15, 6, 12,  68,  "🤮", new("slime_gel",       "Slime Gel",       "💧")),
+        new("Wolf",      83, 13, 22, 3,  8,  93,  "🐺", new("wolf_fang",       "Wolf Fang",       "🦷")),
+        new("Ghost",     60, 11, 19, 2,  5,  83,  "👻", new("ectoplasm",       "Ectoplasm",       "👻")),
+        new("Sinner",    90, 14, 23, 4,  9,  86,  "😈", new("cursed_coin",     "Cursed Coin",     "🪙")),
+        new("Corpse",    95, 15, 24, 5, 10,  95,  "🪦", new("grave_dust",      "Grave Dust",      "💨")),
     };
 
-    // ── ⭐⭐ 2 STAR ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    //  ⭐⭐ 2 STAR
+    // ══════════════════════════════════════════════════════════
     public static readonly MonsterStats[] TwoStarMonsters =
     {
-        new("Giant Bat",       93,  15, 23, 4, 8,   110, "🦇"),
-        new("Lizardman",       104, 16, 25, 6, 12,  130, "🦎"),
-        new("Nightmare",       98,  17, 27, 3, 7,   140, "🌑"),
-        new("Flesh",           110, 14, 22, 7, 13,  120, "✋"),
-        new("Cursed Skull",    87,  18, 28, 2, 6,   135, "☠️"),
-        new("Crusader",        118, 20, 29, 5, 11,  145, "🛡️"),
+        new("Giant Bat",    102, 16, 25, 5,  9,  132, "🦇", new("bat_wing",        "Bat Wing",        "🦇")),
+        new("Lizardman",    113, 17, 27, 7, 13,  152, "🦎", new("lizard_scale",    "Lizard Scale",    "🦎")),
+        new("Nightmare",    107, 18, 29, 4,  8,  162, "🌑", new("dark_essence",    "Dark Essence",    "🌑")),
+        new("Flesh",        119, 15, 24, 8, 14,  142, "✋", new("flesh_chunk",     "Flesh Chunk",     "✋")),
+        new("Cursed Skull",  96, 19, 30, 3,  7,  157, "☠️", new("cursed_eye",      "Cursed Eye",      "👁️")),
+        new("Crusader",     127, 21, 31, 6, 12,  167, "🛡️", new("iron_emblem",     "Iron Emblem",     "🛡️")),
+        new("Imp",          132, 22, 33, 7, 14,  175, "😈", new("imp_horn",        "Imp Horn",        "😈")),
     };
 
-    // ── ⭐⭐⭐ 3 STAR ────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    //  ⭐⭐⭐ 3 STAR
+    // ══════════════════════════════════════════════════════════
     public static readonly MonsterStats[] ThreeStarMonsters =
     {
-        new("Skeleton Warrior", 133, 21, 31, 8,  15, 200, "⚔️"),
-        new("Werewolf",         144, 23, 35, 6,  13, 220, "🐺"),
-        new("Wyvern",           150, 25, 37, 7,  14, 240, "🐲"),
-        new("Man-Eater Ghoul",  138, 22, 32, 5,  11, 210, "💀"),
-        new("Phantom Duelist",  127, 24, 36, 4,  10, 230, "🗡️"),
-        new("Holy Knight",      162, 27, 39, 9,  16, 235, "⚔️"),
+        new("Skeleton Warrior", 145, 23, 34, 9,  16, 230, "⚔️", new("war_blade_shard",  "War Blade Shard",  "⚔️")),
+        new("Werewolf",         156, 25, 38, 7,  14, 250, "🐺", new("silver_claw",      "Silver Claw",      "🌕")),
+        new("Wyvern",           162, 27, 40, 8,  15, 270, "🐲", new("wyvern_talon",     "Wyvern Talon",     "🐲")),
+        new("Man-Eater Ghoul",  150, 24, 35, 6,  12, 240, "💀", new("ghoul_tooth",      "Ghoul Tooth",      "🦷")),
+        new("Phantom Duelist",  139, 26, 39, 5,  11, 260, "🗡️", new("phantom_blade",    "Phantom Blade",    "🗡️")),
+        new("Holy Knight",      174, 29, 42, 10, 17, 265, "⚔️", new("holy_crest",       "Holy Crest",       "✝️")),
+        new("Cerberus",         180, 30, 44, 11, 18, 285, "🐕", new("hellhound_collar", "Hellhound Collar", "🔗")),
     };
 
-    // ── ⭐⭐⭐⭐ 4 STAR ───────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    //  ⭐⭐⭐⭐ 4 STAR
+    // ══════════════════════════════════════════════════════════
     public static readonly MonsterStats[] FourStarMonsters =
     {
-        new("Vampire",          175, 29, 44, 9,  17, 350, "🧛"),
-        new("Demon",            185, 31, 46, 10, 18, 380, "😈"),
-        new("Headless Knight",  196, 28, 43, 14, 22, 370, "⚔️"),
-        new("Medusa",           168, 32, 48, 8,  16, 360, "🐍"),
-        new("Fallen Angel",     180, 35, 51, 7,  15, 400, "👼"),
-        new("Devil Hunter",     225, 39, 57, 12, 21, 460, "🔥"),
+        new("Vampire",        160, 26, 39, 8,  15, 320, "🧛", new("blood_vial",       "Blood Vial",       "🩸")),
+        new("Demon",          168, 28, 41, 9,  16, 345, "😈", new("demon_heart",      "Demon Heart",      "❤️‍🔥")),
+        new("Headless Knight",178, 25, 38, 12, 19, 335, "⚔️", new("hollow_helm",      "Hollow Helm",      "⛑️")),
+        new("Medusa",         153, 29, 43, 7,  14, 325, "🐍", new("stone_gaze_shard", "Stone Gaze Shard", "💎")),
+        new("Fallen Angel",   164, 31, 46, 6,  13, 360, "👼", new("broken_halo",      "Broken Halo",      "👼")),
+        new("Devil Hunter",   200, 34, 50, 10, 18, 410, "🔥", new("hellfire_core",    "Hellfire Core",    "🔥")),
+        new("Nightstalker",   210, 36, 53, 11, 20, 430, "🌑", new("shadow_fragment",  "Shadow Fragment",  "🌑")),
     };
 
-    // ── ⭐⭐⭐⭐⭐ 5 STAR ──────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    //  ⭐⭐⭐⭐⭐ 5 STAR
+    // ══════════════════════════════════════════════════════════
     public static readonly MonsterStats[] FiveStarMonsters =
     {
-        new("Dragon",           260, 40, 60, 16, 25, 600, "🐉"),
-        new("Leviathan",        295, 38, 58, 14, 23, 650, "🌊"),
-        new("Hydra",            280, 35, 55, 18, 28, 620, "🐍"),
-        new("Death",            235, 46, 67, 12, 21, 700, "💀"),
-        new("Seraph of Death",  248, 44, 63, 15, 24, 750, "👼"),
-        new("Seraphim",         315, 52, 74, 18, 27, 820, "🌟"),
+        new("Dragon",         235, 36, 54, 14, 22, 540, "🐉", new("dragon_scale",     "Dragon Scale",     "🐉")),
+        new("Leviathan",      265, 34, 52, 12, 20, 580, "🌊", new("abyssal_pearl",    "Abyssal Pearl",    "🌊")),
+        new("Hydra",          252, 31, 49, 16, 25, 555, "🐍", new("hydra_venom",      "Hydra Venom",      "☠️")),
+        new("Death",          212, 41, 60, 10, 18, 620, "💀", new("death_scythe_tip", "Death Scythe Tip", "💀")),
+        new("Seraph of Death",225, 39, 56, 13, 21, 660, "👼", new("fallen_feather",   "Fallen Feather",   "🪶")),
+        new("Seraphim",       285, 46, 66, 16, 24, 720, "🌟", new("divine_core",      "Divine Core",      "🌟")),
+        new("Lucifer",        300, 48, 70, 17, 26, 770, "😈", new("lucifer_sigil",    "Lucifer's Sigil",  "🔱")),
     };
 }

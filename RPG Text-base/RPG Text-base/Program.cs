@@ -2,16 +2,38 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using static RPG_Text_base.Stats;
 using static RPG_Text_base.Title;
 using static RPG_Text_base.Leaderboards;
 using static RPG_Text_base.Shop;
-using static RPG_Text_base.ClassSystem;
+using static RPG_Text_base.Bonfire;
+using static RPG_Text_base.Inventory;
 
 namespace RPG_Text_base;
 
 public static class Program
 {
+    // Helper methods
+    public static void AdvanceTurn(ref int turn) => turn++;
+
+    public static void PauseAndClear()
+    {
+        Console.WriteLine("\n  Press any key to continue...");
+        Console.ReadKey(true);
+        Console.Clear();
+    }
+
+    public static void PrintColor(ConsoleColor color, string text)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(text);
+        Console.ResetColor();
+    }
+
+
+    public static readonly Random rand = new Random();   // Rand chính của game
+
     // ========== BATTLE SYSTEM ==========
 
     public static MonsterRarity GetCurrentTier()
@@ -33,6 +55,25 @@ public static class Program
         _ => "???"
     };
 
+    // ── Helper hiển thị Gear ──
+    public static string BuildGearLine()
+    {
+        return playerAtkBonus > 0 ? $"ATK Bonus: +{playerAtkBonus}" : "";
+    }
+
+    // ── Print Health Bar ──
+    public static void PrintHealthBar(string label, int current, int max, ConsoleColor color)
+    {
+        double percent = (double)current / max;
+        int barLength = 20;
+        int filled = (int)(percent * barLength);
+
+        // Đã sửa lỗi string concatenation
+        string bar = new string('█', filled) + new string('░', barLength - filled);
+
+        PrintColor(color, $"  {label,-10} [{bar}] {current}/{max} HP");
+    }
+
     public static bool RunBattle()
     {
         // ── Setup ──────────────────────────────────────────────
@@ -41,10 +82,10 @@ public static class Program
         int overallBattle = monstersKilled + 1;
 
         MonsterStats monster = GetMonsterStats(currentTier);
-        string rarityStars = new('⭐', (int)currentTier);
+        string rarityStars = new string('⭐', (int)currentTier);
         string tierName = GetTierName(currentTier);
 
-        // Scale khó dần trong tier
+        // Scale độ khó dần trong tier
         int tierScale = battleInTier - 1;
         int maxHP = monster.MaxHP + tierScale * 8;
         int atkMin = monster.AtkMin + tierScale;
@@ -54,7 +95,6 @@ public static class Program
         int score = monster.Score + tierScale * 20;
 
         // Combat variables
-        int playerHP = playerMaxHP;
         int playerShield = 0;
         int monsterHP = maxHP;
         int monsterShield = 0;
@@ -64,18 +104,14 @@ public static class Program
         // ── Battle Intro ───────────────────────────────────────
         Console.Clear();
         Console.WriteLine("════════════════════════════════════════");
-        PrintColor(ConsoleColor.Yellow,
-            $"  ⚠️  Battle {battleInTier}/5  [Tier {(int)currentTier} — {tierName}]");
-        PrintColor(ConsoleColor.DarkGray,
-            $"  Overall progress: {overallBattle}/25");
+        PrintColor(ConsoleColor.Yellow, $"  ⚠️  Battle {battleInTier}/5  [Tier {(int)currentTier} — {tierName}]");
+        PrintColor(ConsoleColor.DarkGray, $"  Overall progress: {overallBattle}/25");
         Console.WriteLine("════════════════════════════════════════");
 
         if (battleInTier == 1 && monstersKilled > 0)
-            PrintColor(ConsoleColor.Magenta,
-                $"\n  ★ TIER UP! You've entered {tierName} territory! {rarityStars}");
+            PrintColor(ConsoleColor.Magenta, $"\n  ★ TIER UP! You've entered {tierName} territory! {rarityStars}");
 
-        PrintColor(ConsoleColor.Cyan,
-            $"\n  A wild {monster.Emoji} {monster.Name.ToUpper()} appears!");
+        PrintColor(ConsoleColor.Cyan, $"\n  A wild {monster.Emoji} {monster.Name.ToUpper()} appears!");
         PrintColor(ConsoleColor.DarkYellow, $"  {rarityStars}  [{tierName}]");
         Console.WriteLine($"  HP: {maxHP} | ATK: {atkMin}–{atkMax} | Score reward: {score} pts");
 
@@ -84,7 +120,7 @@ public static class Program
             PrintColor(ConsoleColor.Magenta, $"\n  Your gear: {gearLine}");
 
         Console.WriteLine($"\n  Current Score: {totalScore} pts | Monsters slain: {monstersKilled}");
-        Console.WriteLine($"\n  ⚡ Stamina: {playerStamina}/{playerMaxStamina}");
+        Console.WriteLine($"  ❤️  HP: {playerHP}/{playerMaxHP}  |  ⚡ Stamina: {playerStamina}/{playerMaxStamina}");
 
         Console.WriteLine("\n  Press any key to start fighting...");
         Console.ReadKey(true);
@@ -93,8 +129,7 @@ public static class Program
         // ── Combat Loop ────────────────────────────────────────
         while (playerHP > 0 && monsterHP > 0)
         {
-            PrintColor(ConsoleColor.White,
-                $"\n══════════ TURN {turn}  [{monster.Emoji} {monster.Name} {rarityStars}] ══════════");
+            PrintColor(ConsoleColor.White, $"\n══════════ TURN {turn}  [{monster.Emoji} {monster.Name} {rarityStars}] ══════════");
 
             PrintHealthBar("YOU      ", playerHP, playerMaxHP, ConsoleColor.Green);
             if (playerShield > 0)
@@ -104,27 +139,23 @@ public static class Program
             if (monsterShield > 0)
                 PrintColor(ConsoleColor.Cyan, $"           🛡️  Shield: {monsterShield}");
 
-            PrintColor(ConsoleColor.DarkYellow,
-                $"\n  🏆 Score: {totalScore} pts  |  ☠️  Slain: {monstersKilled}  |  🧪 Potions: {potions}");
-            PrintColor(ConsoleColor.Blue,
-                $"  ⚡ Stamina: {playerStamina}/{playerMaxStamina}");
-            PrintColor(ConsoleColor.DarkGray,
-                $"  Progress: Battle {overallBattle}/25  (Tier {(int)currentTier}: {battleInTier}/5)");
+            PrintColor(ConsoleColor.DarkYellow, $"  🏆 Score: {totalScore} pts  |  ☠️  Slain: {monstersKilled}  |  🧪 Potions: {potions}");
+            PrintColor(ConsoleColor.Blue, $"  ⚡ Stamina: {playerStamina}/{playerMaxStamina}");
+            PrintColor(ConsoleColor.DarkGray, $"  Progress: Battle {overallBattle}/25  (Tier {(int)currentTier}: {battleInTier}/5)");
             Console.WriteLine("────────────────────────────────────");
 
             // Player Input
             string input = "";
-
             bool canAttack = playerStamina >= 10;
 
             while (true)
             {
                 if (canAttack)
-                    Console.Write("\n  Your move [atk / def / item]: ");
+                    Console.Write("\n  Your move [atk / def / item / inv]: ");
                 else
                 {
                     PrintColor(ConsoleColor.DarkYellow, "  ⚠️  Not enough stamina! You must DEFEND to recover stamina.");
-                    Console.Write("\n  Your move [def / item]: ");
+                    Console.Write("\n  Your move [def / item / inv]: ");
                 }
 
                 input = Console.ReadLine()?.Trim().ToLower() ?? "";
@@ -135,7 +166,7 @@ public static class Program
                     continue;
                 }
 
-                if (input == "atk" || input == "def" || input == "item")
+                if (input == "atk" || input == "def" || input == "item" || input == "inv")
                     break;
 
                 PrintColor(ConsoleColor.DarkYellow, "  ⚠️  Invalid command!");
@@ -148,9 +179,9 @@ public static class Program
             {
                 case "atk":
                     {
-                        playerStamina -= 10;                    // Trừ stamina khi tấn công
+                        playerStamina -= 10;
 
-                        int dmg = rand.Next(5, 21) + playerAtkBonus;
+                        int dmg = rand.Next(5, 21) + playerAtkBonus;   
                         bool isCrit = rand.Next(100) < 5;
                         if (isCrit) dmg = (int)(dmg * 2.0);
 
@@ -183,11 +214,8 @@ public static class Program
 
                 case "def":
                     playerShield = rand.Next(8, 18);
-                    // SỬA Ở ĐÂY: Dùng staminaRegen thay vì +10 cố định
                     playerStamina = Math.Min(playerMaxStamina, playerStamina + staminaRegen);
-
-                    PrintColor(ConsoleColor.Cyan,
-                        $"  🛡️  You brace and gain {playerShield} shield! (+{staminaRegen} Stamina)");
+                    PrintColor(ConsoleColor.Cyan, $"  🛡️  You brace and gain {playerShield} shield! (+{staminaRegen} Stamina)");
                     break;
 
                 case "item":
@@ -196,8 +224,7 @@ public static class Program
                         int heal = rand.Next(20, 35);
                         playerHP = Math.Min(playerMaxHP, playerHP + heal);
                         potions--;
-                        PrintColor(ConsoleColor.Magenta,
-                            $"  🧪 Drank potion! +{heal} HP (now {playerHP}/{playerMaxHP})");
+                        PrintColor(ConsoleColor.Magenta, $"  🧪 Drank potion! +{heal} HP (now {playerHP}/{playerMaxHP})");
                         PrintColor(ConsoleColor.Green, "  ✨ Potion does not consume your turn!");
                         AdvanceTurn(ref turn);
                         PauseAndClear();
@@ -205,6 +232,12 @@ public static class Program
                     }
                     PrintColor(ConsoleColor.DarkYellow, "  ⚠️  No potions left! Turn wasted.");
                     break;
+
+                case "inv":
+                    Console.Clear();
+                    Inventory.ShowInventory();
+                    PauseAndClear();
+                    continue;
             }
 
             if (monsterHP <= 0) break;
@@ -219,8 +252,7 @@ public static class Program
                     int netMDmg = Math.Max(0, mDmg - playerShield);
                     playerHP = Math.Max(0, playerHP - netMDmg);
 
-                    PrintColor(ConsoleColor.Red,
-                        $"  {monster.Emoji} {monster.Name} attacks for {mDmg} damage!");
+                    PrintColor(ConsoleColor.Red, $"  {monster.Emoji} {monster.Name} attacks for {mDmg} damage!");
 
                     if (playerShield > 0)
                         Console.WriteLine($"  🛡️  Your shield absorbed {playerShield} → net: {netMDmg}");
@@ -230,8 +262,7 @@ public static class Program
                 else // Defend
                 {
                     monsterShield = rand.Next(defMin, defMax);
-                    PrintColor(ConsoleColor.Yellow,
-                        $"  {monster.Emoji} {monster.Name} defends and gains {monsterShield} shield.");
+                    PrintColor(ConsoleColor.Yellow, $"  {monster.Emoji} {monster.Name} defends and gains {monsterShield} shield.");
                 }
 
                 if (playerHP <= 0) break;
@@ -278,17 +309,32 @@ public static class Program
         PrintColor(ConsoleColor.Yellow, $"  │  Grand total     :  {totalScore,4} pts");
         Console.WriteLine("  └───────────────────────────────────┘");
 
-        PrintColor(ConsoleColor.Magenta,
-            $"  ⬆️  Permanent bonus: ATK +1 | Max HP +2");
+
+        // ── MONSTER DROP ─────────────────────────────────────────────
+        Console.WriteLine();
+
+        if (Inventory.AddItem(monster.Drop.ItemId))
+        {
+            PrintColor(ConsoleColor.Magenta,
+                $"  🎁 DROPPED: {monster.Drop.Emoji} {monster.Drop.ItemName}!");
+        }
+        else
+        {
+            PrintColor(ConsoleColor.DarkYellow,
+                $"  ⚠️  Inventory full! {monster.Drop.Emoji} {monster.Drop.ItemName} bị mất.");
+        }
+
+
+
+
+        PrintColor(ConsoleColor.Magenta, $"  ⬆️  Permanent bonus: ATK +1 | Max HP +2");
 
         Console.WriteLine($"\n  Survived with {playerHP}/{playerMaxHP} HP | Stamina: {playerStamina}/{playerMaxStamina} | {turn} turns.");
 
-        // Tier clear notification
         if (monstersKilled % 5 == 0 && monstersKilled > 0)
         {
             int finishedTier = monstersKilled / 5;
-            PrintColor(ConsoleColor.Magenta,
-                $"\n  ★ TIER {finishedTier} CLEARED! {new string('⭐', finishedTier)}");
+            PrintColor(ConsoleColor.Magenta, $"\n  ★ TIER {finishedTier} CLEARED! {new string('⭐', finishedTier)}");
 
             if (finishedTier < 5)
             {
@@ -310,14 +356,27 @@ public static class Program
             return false;
         }
 
-        Console.WriteLine("\n  Press any key to visit the Shop...");
+        // ── Chọn Shop hay Bonfire ──────────────────
+        Console.WriteLine("\n  Press any key to continue...");
         Console.ReadKey(true);
         Console.Clear();
-        RunShop();
 
-        // Next action
+        Console.WriteLine("════════════════════════════════════════");
+        PrintColor(ConsoleColor.Cyan, "  Where do you want to go?");
+        Console.WriteLine("    [1] 🛒  Visit the Shop");
+        Console.WriteLine("    [2] 🔥  Rest at the Bonfire");
+
+        string dest = ReadChoice("  Enter 1 or 2: ", ["1", "2"]);
         Console.Clear();
-        Console.WriteLine("════════════════════════════════════");
+
+        if (dest == "1")
+            RunShop();
+        else
+            RunBonfire();
+
+        // ── Next Action ───────────────────────────────────
+        Console.Clear();
+        Console.WriteLine("════════════════════════════════════════");
         PrintColor(ConsoleColor.Cyan, "  What do you want to do next?");
         Console.WriteLine("    [1] ⚔️  Continue fighting");
         Console.WriteLine("    [2] 🏠  Retire and see final score");
@@ -327,24 +386,9 @@ public static class Program
         return next == "1";
     }
 
-    // Helper methods
-    private static void AdvanceTurn(ref int turn) => turn++;
 
-    private static void PauseAndClear()
-    {
-        Console.WriteLine("\n  Press any key to continue...");
-        Console.ReadKey(true);
-        Console.Clear();
-    }
 
-    private static void PrintColor(ConsoleColor color, string text)
-    {
-        Console.ForegroundColor = color;
-        Console.WriteLine(text);
-        Console.ResetColor();
-    }
-
-    private static string ReadChoice(string prompt, string[] valid)
+    public static string ReadChoice(string prompt, string[] valid)
     {
         string input = "";
         while (!valid.Contains(input))

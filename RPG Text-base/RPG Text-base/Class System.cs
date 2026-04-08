@@ -12,14 +12,15 @@ public static class ClassSystem
     //  DỮ LIỆU CLASS — ĐÃ CÂN BẰNG
     // ──────────────────────────────────────────────────────────
 
-    public enum PlayerClass { Knight, Assassin, Mage, Archer, Berserker }
+    public enum PlayerClass { Knight, Assassin, Mage, Archer, Berserker, Dragoon }
 
     public record ClassData(
         string Name,
         string Emoji,
         string Lore,
         int BaseHP,      // HP khởi đầu
-        int BaseAtk      // ATK bonus khởi đầu
+        int BaseAtk,     // ATK bonus khởi đầu
+        int BaseStamina  // STAMINA khởi đầu (mới thêm)
     );
 
     public static readonly Dictionary<PlayerClass, ClassData> Classes = new()
@@ -29,39 +30,54 @@ public static class ClassSystem
             Emoji: "🛡️",
             Lore: "Chiến binh phòng thủ vững chắc, sống dai và ổn định.",
             BaseHP: 130,
-            BaseAtk: 7
+            BaseAtk: 8,
+            BaseStamina: 100
         ),
 
         [PlayerClass.Assassin] = new(
             Name: "Assassin",
             Emoji: "🗡️",
-            Lore: "Nhanh nhẹn, sát thương cao nhưng máu mỏng.",
-            BaseHP: 95,
-            BaseAtk: 10
+            Lore: "Nhanh nhẹn, sát thương cao nhưng máu và stamina mỏng.",
+            BaseHP: 100,
+            BaseAtk: 10,
+            BaseStamina: 90
         ),
 
         [PlayerClass.Mage] = new(
             Name: "Mage",
             Emoji: "🔮",
-            Lore: "Sát thương phép thuật mạnh, nhưng cơ thể yếu ớt.",
-            BaseHP: 75,
-            BaseAtk: 15
+            Lore: "Sát thương phép thuật mạnh, nhưng cơ thể và stamina yếu ớt.",
+            BaseHP: 80,
+            BaseAtk: 15,
+            BaseStamina: 80
         ),
 
         [PlayerClass.Archer] = new(
             Name: "Archer",
             Emoji: "🏹",
-            Lore: "Cân bằng tốt giữa sát thương và phòng thủ.",
+            Lore: "Cân bằng tốt giữa sát thương, phòng thủ và stamina.",
             BaseHP: 115,
-            BaseAtk: 8
+            BaseAtk: 9,
+            BaseStamina: 110
         ),
 
         [PlayerClass.Berserker] = new(
             Name: "Berserker",
             Emoji: "⚡",
-            Lore: "Càng đánh càng mạnh khi máu thấp (tăng sát thương theo % HP mất).",
+            Lore: "Càng đánh càng mạnh khi máu thấp. Stamina trung bình.",
             BaseHP: 120,
-            BaseAtk: 6
+            BaseAtk: 7,
+            BaseStamina: 100
+        ),
+
+        // ── CLASS MỚI ─────────────────────────────────────
+        [PlayerClass.Dragoon] = new(
+            Name: "Dragoon",
+            Emoji: "🐉",
+            Lore: "Chiến binh rồng, sức bền và sức mạnh bùng nổ. Stamina cao nhất.",
+            BaseHP: 125,
+            BaseAtk: 10,
+            BaseStamina: 130
         )
     };
 
@@ -86,27 +102,30 @@ public static class ClassSystem
         {
             Console.Write($"  [{i}] {data.Emoji}  ");
             PrintColor(ConsoleColor.Cyan, data.Name);
-            Console.WriteLine($"       HP: {data.BaseHP}  |  ATK Bonus: +{data.BaseAtk}");
+            Console.WriteLine($"       HP: {data.BaseHP}  |  ATK: +{data.BaseAtk}  |  STA: {data.BaseStamina}");
             PrintColor(ConsoleColor.DarkGray, $"       {data.Lore}");
             Console.WriteLine();
             i++;
         }
 
-        string[] validInputs = ["1", "2", "3", "4", "5"];
-        string choice = ReadChoice("  Enter class number [1-5]: ", validInputs);
+        string[] validInputs = ["1", "2", "3", "4", "5", "6"];
+        string choice = ReadChoice("  Enter class number [1-6]: ", validInputs);
 
         SelectedClass = (PlayerClass)(int.Parse(choice) - 1);
         ClassData chosen = Current;
 
         // Áp dụng chỉ số base vào Stats
         playerMaxHP = chosen.BaseHP;
-        playerMaxHP = chosen.BaseHP;           // Reset HP về max khi chọn class
+        playerHP = chosen.BaseHP;
         playerAtkBonus = chosen.BaseAtk;
+        playerMaxStamina = chosen.BaseStamina;   // ← MỚI THÊM
+        playerStamina = chosen.BaseStamina;      // ← MỚI THÊM
 
         Console.Clear();
         PrintColor(ConsoleColor.Yellow, $"\n  ✅ You chose: {chosen.Emoji} {chosen.Name}!");
-        Console.WriteLine($"  Starting HP : {chosen.BaseHP}");
-        Console.WriteLine($"  Starting ATK: +{chosen.BaseAtk}");
+        Console.WriteLine($"  Starting HP     : {chosen.BaseHP}");
+        Console.WriteLine($"  Starting ATK    : +{chosen.BaseAtk}");
+        Console.WriteLine($"  Starting Stamina: {chosen.BaseStamina}");
         PrintColor(ConsoleColor.DarkGray, $"  {chosen.Lore}");
 
         Console.WriteLine("\n  Press any key to begin your adventure...");
@@ -116,7 +135,6 @@ public static class ClassSystem
 
     // ──────────────────────────────────────────────────────────
     //  BERSERKER PASSIVE: Tăng sát thương khi máu thấp
-    //  (Chỉ Berserker có cơ chế này)
     // ──────────────────────────────────────────────────────────
 
     public static int GetBerserkerDamageBonus(int currentHP, int maxHP, int baseDamage)
@@ -124,8 +142,8 @@ public static class ClassSystem
         if (SelectedClass != PlayerClass.Berserker)
             return baseDamage;
 
-        double missingHPRatio = (double)(maxHP - currentHP) / maxHP;   // 0.0 → 1.0
-        double multiplier = 1.0 + (missingHPRatio * 0.9);              // Tối đa x1.9 khi gần chết
+        double missingHPRatio = (double)(maxHP - currentHP) / maxHP;
+        double multiplier = 1.0 + (missingHPRatio * 0.9);   // max x1.9 khi gần chết
 
         return (int)(baseDamage * multiplier);
     }

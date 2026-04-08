@@ -1,27 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using static RPG_Text_base.Program;
+using System.Linq;
+using System.Text;
+
+
+
 using static RPG_Text_base.Stats;
+using static RPG_Text_base.Program;
 using static RPG_Text_base.Leaderboards;
 using static RPG_Text_base.Shop;
+using static RPG_Text_base.Bonfire;
+using static RPG_Text_base.Inventory;
+
 using RPG_Text_base;
-using static RPG_Text_base.ClassSystem;
 
 namespace RPG_Text_base;
 
 public static class Title
 {
-    // Shared Random instance used across the entire game
-    public static readonly Random rand = new();
-
     // ========== ENTRY POINT ==========
     public static void Main()
     {
+        Console.Title = "Monster Battle RPG";
+
         ShowTitleScreen();
         ClassSystem.ChooseClass();
 
-        // Main game loop: keep battling until player dies or chooses to retire
-        while (RunBattle()) { }
+        // Main game loop
+        bool continuePlaying = true;
+        while (continuePlaying)
+        {
+            continuePlaying = RunBattle();
+        }
 
         ShowFinalScore();
     }
@@ -34,7 +44,7 @@ public static class Title
 
         // ── TOP GLOW BAR ──
         PrintColor(ConsoleColor.DarkRed,
-        "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
         PrintColor(ConsoleColor.Red,
             "         ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒");
         PrintColor(ConsoleColor.Yellow,
@@ -44,7 +54,7 @@ public static class Title
 
         // ── TITLE ──
         PrintColor(ConsoleColor.Yellow,
-        "              * *   MONSTER  BATTLE  RPG   * *");
+            "              * *   MONSTER  BATTLE  RPG   * *");
         PrintColor(ConsoleColor.DarkYellow,
             "            -  -  -  -  -  -  -  -  -  -  -  -  -");
 
@@ -52,7 +62,7 @@ public static class Title
 
         // ── BOTTOM GLOW BAR ──
         PrintColor(ConsoleColor.Yellow,
-        "         ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓");
+            "         ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓");
         PrintColor(ConsoleColor.Red,
             "         ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒");
         PrintColor(ConsoleColor.DarkRed,
@@ -62,19 +72,19 @@ public static class Title
 
         // ── TAGLINE ──
         PrintColor(ConsoleColor.Cyan,
-        "        Defeat monsters  >>  Earn score  >>  Survive");
+            "        Defeat monsters  >>  Earn score  >>  Survive");
 
         Console.WriteLine();
 
         // ── COMMANDS BOX ──
         PrintColor(ConsoleColor.DarkGray,
-        "         +---------------------------------------+");
-        PrintColor(ConsoleColor.DarkGray, "         |"); PrintColor2(ConsoleColor.White, "  COMMANDS", ConsoleColor.DarkGray, "                                 |");
+            "         +---------------------------------------+");
+        PrintColor2(ConsoleColor.White, "         |", ConsoleColor.DarkGray, "  COMMANDS                                 |");
         PrintColor(ConsoleColor.DarkGray,
             "         +---------------------------------------+");
-        PrintColor(ConsoleColor.DarkGray, "         |"); PrintColor2(ConsoleColor.Green, "  atk", ConsoleColor.Gray, "  >>  Attack the monster              |");
-        PrintColor(ConsoleColor.DarkGray, "         |"); PrintColor2(ConsoleColor.Cyan, "  def", ConsoleColor.Gray, "  >>  Defend and gain shield          |");
-        PrintColor(ConsoleColor.DarkGray, "         |"); PrintColor2(ConsoleColor.Yellow, "  item", ConsoleColor.Gray, " >>  Use Health Potion               |");
+        PrintColor2(ConsoleColor.Green, "         |", ConsoleColor.Gray, "  atk   >>  Attack the monster              |");
+        PrintColor2(ConsoleColor.Cyan, "         |", ConsoleColor.Gray, "  def   >>  Defend and gain shield          |");
+        PrintColor2(ConsoleColor.Yellow, "         |", ConsoleColor.Gray, "  item  >>  Use Health Potion               |");
         PrintColor(ConsoleColor.DarkGray,
             "         +---------------------------------------+");
 
@@ -82,7 +92,7 @@ public static class Title
 
         // ── BONUS STRIP ──
         PrintColor(ConsoleColor.DarkYellow,
-        "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
         PrintColor(ConsoleColor.DarkGray, "         |");
         Console.ForegroundColor = ConsoleColor.Green;
         Console.Write("  [KILL BONUS]");
@@ -90,33 +100,47 @@ public static class Title
         Console.WriteLine("  +1 ATK  and  +2 Max HP  per kill      |");
         Console.ResetColor();
         PrintColor(ConsoleColor.DarkYellow,
-        "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
+            "         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░");
 
         Console.WriteLine();
 
-        // ── PROMPT ──
         PrintColor(ConsoleColor.DarkGray,
-        "              [ Press any key to begin... ]");
+            "              [ Press any key to begin... ]");
         Console.WriteLine();
 
         Console.ReadKey(true);
         Console.Clear();
     }
 
-    // ── HELPERS ──
-    private static void PrintColor(ConsoleColor color, string text)
+    // ========== FINAL SCORE SCREEN ==========
+    public static void ShowFinalScore()
     {
-        Console.ForegroundColor = color;
-        Console.WriteLine(text);
+        Console.Clear();
+        Console.WriteLine("══════════════════════════════════════════════");
+        PrintColor(ConsoleColor.Yellow, "              ★ GAME OVER ★");
+        Console.WriteLine("══════════════════════════════════════════════");
+
+        PrintColor(ConsoleColor.Cyan, $"  Final Score        : {totalScore} pts");
+        PrintColor(ConsoleColor.Magenta, $"  Monsters Slain     : {monstersKilled}/25");
+        PrintColor(ConsoleColor.Blue, $"  Total Turns Taken  : {totalTurns}");
+        PrintColor(ConsoleColor.Green, $"  Final HP           : {playerHP}/{playerMaxHP}");
+        PrintColor(ConsoleColor.Green, $"  Final Stamina      : {playerStamina}/{playerMaxStamina}");
+
+        Console.WriteLine("\n══════════════════════════════════════════════");
+        PrintColor(ConsoleColor.DarkYellow, "  Thank you for playing Monster Battle RPG!");
+        Console.WriteLine("\n  Press any key to exit...");
+        Console.ReadKey(true);
+    }
+    // ── HELPERS ── (SỬ DỤNG PrintColor từ Program)
+    // Không định nghĩa lại PrintColor ở đây nữa
+
+    public static void PrintColor2(ConsoleColor color1, string text1, ConsoleColor color2, string text2)
+    {
+        Console.ForegroundColor = color1;
+        Console.Write(text1);
+        Console.ForegroundColor = color2;
+        Console.WriteLine(text2);
         Console.ResetColor();
     }
 
-    private static void PrintColor2(ConsoleColor c1, string t1, ConsoleColor c2, string t2)
-    {
-        Console.ForegroundColor = c1;
-        Console.Write(t1);
-        Console.ForegroundColor = c2;
-        Console.WriteLine(t2);
-        Console.ResetColor();
-    }
 }

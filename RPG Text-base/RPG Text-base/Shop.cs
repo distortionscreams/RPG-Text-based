@@ -148,12 +148,6 @@ public static class Shop
         return string.Join(" | ", parts);
     }
 
-    public static void PrintColor(ConsoleColor color, string text)
-    {
-        Console.ForegroundColor = color;
-        Console.WriteLine(text);
-        Console.ResetColor();
-    }
 
     public static void PrintHealthBar(string label, int current, int max, ConsoleColor color)
     {
